@@ -1,80 +1,79 @@
-const {response} = require('express');
-const {pokemons} = require('../models/datos-pokemons');
+const { response } = require('express');
+const Pokemon = require('../models/pokemon');
 
-const pokemonsGet = (req, res = response)=>{
-    console.log(pokemons);
-   res.json(pokemons); 
-}
-
-const pokemonsPost = (req, res = response)=>{
-    const pok = req.body;
-    const nuevoPokemon = {
-        id: parseInt(pok.id),
-        nombre: pok.nombre,
-        tipo: pok.tipo,
-        imgurl: pok.imgurl
+const pokemonsGet = async (req, res = response) => {
+    try {
+        const pokemons = await Pokemon.find();
+        res.json(pokemons);
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al obtener pokemons', error });
     }
-    pokemons.push(nuevoPokemon);
-    console.log(pokemons);
-    res.json({
-     msg: `El pokemon ${nuevoPokemon.nombre} se ha creado`
-    }); 
- }
+};
 
- /** Solo cambia el url de la imagen del pokemon */
-const pokemonsPatch = (req, res = response) => {
-   const { id } = req.params;
-   const { imgurl } = req.body;
-   let index = pokemons.findIndex(p => p.id === parseInt(id));
-   if (index !== -1) {
-       pokemons[index].imgurl = imgurl;
-       res.json(pokemons[index]);
-   } else {
-       res.status(404).json({
-           msg: 'Pokemon no encontrado'
-       });
-   }
-}
+const pokemonsPost = async (req, res = response) => {
+    const { id, nombre, tipo, imgurl } = req.body;
+    try {
+        const nuevoPokemon = new Pokemon({ id, nombre, tipo, imgurl });
+        await nuevoPokemon.save();
+        res.json({ msg: `El pokemon ${nombre} se ha creado`, pokemon: nuevoPokemon });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al crear el pokemon', error });
+    }
+};
 
-// Actualiza completamente un pokemon existente por su ID
-const pokemonsPut = (req, res = response) => {
-   const { id } = req.params;
-   const { nombre, tipo, imgurl } = req.body;
-   let index = pokemons.findIndex(p => p.id === parseInt(id));
-   if (index !== -1) {
-       pokemons[index] = { id: parseInt(id), nombre, tipo, imgurl };
-       res.json({
-           msg: `El pokemon con ID ${id} ha sido actualizado`,
-           pokemon: pokemons[index]
-       });
-   } else {
-       res.status(404).json({
-           msg: 'Pokemon no encontrado'
-       });
-   }
-}
+const pokemonsPatch = async (req, res = response) => {
+    const { id } = req.params;
+    const { imgurl } = req.body;
+    try {
+        const updatedPokemon = await Pokemon.findOneAndUpdate(
+            { id: parseInt(id) },
+            { imgurl },
+            { new: true }
+        );
+        if (!updatedPokemon) {
+            return res.status(404).json({ msg: 'Pokemon no encontrado' });
+        }
+        res.json(updatedPokemon);
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al actualizar el pokemon', error });
+    }
+};
 
-// Elimina un pokemon por su ID
-const pokemonsDelete = (req, res = response) => {
-   const { id } = req.params;
-   let index = pokemons.findIndex(p => p.id === parseInt(id));
-   if (index !== -1) {
-       const deletedPokemon = pokemons.splice(index, 1);
-       res.json({
-           msg: `El pokemon con ID ${id} ha sido eliminado`,
-           pokemon: deletedPokemon[0]
-       });
-   } else {
-       res.status(404).json({
-           msg: 'Pokemon no encontrado'
-       });
-   }
-}
+const pokemonsPut = async (req, res = response) => {
+    const { id } = req.params;
+    const { nombre, tipo, imgurl } = req.body;
+    try {
+        const updatedPokemon = await Pokemon.findOneAndUpdate(
+            { id: parseInt(id) },
+            { nombre, tipo, imgurl },
+            { new: true }
+        );
+        if (!updatedPokemon) {
+            return res.status(404).json({ msg: 'Pokemon no encontrado' });
+        }
+        res.json({ msg: `El pokemon con ID ${id} ha sido actualizado`, pokemon: updatedPokemon });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al actualizar el pokemon', error });
+    }
+};
 
- module.exports = {
-    pokemonsDelete,
+const pokemonsDelete = async (req, res = response) => {
+    const { id } = req.params;
+    try {
+        const deletedPokemon = await Pokemon.findOneAndDelete({ id: parseInt(id) });
+        if (!deletedPokemon) {
+            return res.status(404).json({ msg: 'Pokemon no encontrado' });
+        }
+        res.json({ msg: `El pokemon con ID ${id} ha sido eliminado`, pokemon: deletedPokemon });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al eliminar el pokemon', error });
+    }
+};
+
+module.exports = {
     pokemonsGet,
+    pokemonsPost,
     pokemonsPatch,
     pokemonsPut,
-    pokemonsPost
- }
+    pokemonsDelete
+};

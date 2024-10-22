@@ -1,19 +1,19 @@
-const {Router} = require('express');
-
-const{
-    pokemonsDelete,
+const express = require('express');
+const router = express.Router();
+const {
     pokemonsGet,
+    pokemonsPost,
     pokemonsPatch,
     pokemonsPut,
-    pokemonsPost
+    pokemonsDelete
 } = require('../controllers/pokemons');
 
-const router = Router();
+const { validarJWT } = require('../helpers/validar-jwt');
 
-router.get('/', pokemonsGet);
-router.post('/', pokemonsPost);
-router.put('/:id', pokemonsPut);
-router.patch('/:id', pokemonsPatch);
-router.delete('/:id',pokemonsDelete);
+router.get('/', validarJWT, pokemonsGet);
+router.post('/', validarJWT, pokemonsPost);
+router.patch('/:id', validarJWT, pokemonsPatch);
+router.put('/:id', validarJWT, pokemonsPut);
+router.delete('/:id', validarJWT, pokemonsDelete);
 
 module.exports = router;
